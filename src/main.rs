@@ -5,9 +5,30 @@ pub mod tinyvm;
 use crate::tinyvm::*;
 
 fn main() {
-    let code = std::fs::read_to_string("./contracts/empty.sol").expect("Unable to read source file");
+    let code = std::fs::read_to_string("./contracts/flipper.sol").expect("Unable to read source file");
     let parsed = parse(code.as_str());
     println!("{:#?}", parsed);
+
+    match parsed {
+        Ok(source_unit) => {
+            create_contracts(source_unit).iter().map(|contract| {
+                let func_sig = get_func_sig("constructor(bool)".to_string());
+                contract.call(func_sig.as_str()).0
+            }).collect::<Vec<Contract>>().iter().for_each(|contract| {
+                println!("{:#?}", contract);
+                let func_sig = get_func_sig("flip()".to_string());
+                let new_contract = contract.call(func_sig.as_str()).0;
+                println!("modified contract: {:#?}", new_contract);
+
+                let func_sig = get_func_sig("get()".to_string());
+                let ret = new_contract.call(func_sig.as_str()).1;
+                println!("Return value: {:#?}", ret);
+            });
+        },
+        Err(e) => {
+            println!("Error: {:?}", e);
+        }
+    };
 }
 
 #[cfg(test)]
