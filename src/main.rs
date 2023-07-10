@@ -1,6 +1,9 @@
 pub mod solidity;
 use crate::solidity::grammar::*;
 
+pub mod tinyvm;
+use crate::tinyvm::*;
+
 fn main() {
     let code = std::fs::read_to_string("./contracts/empty.sol").expect("Unable to read source file");
     let parsed = parse(code.as_str());
@@ -42,4 +45,56 @@ mod tests {
         println!("{:#?}", parsed);
         assert!(parsed.is_ok());
     }
+
+    #[test]
+    fn test_call_flipper_contract() {
+        let code = std::fs::read_to_string("./contracts/flipper.sol").expect("Unable to read source file");
+        let parsed = parse(code.as_str());
+        println!("{:#?}", parsed);
+        assert!(parsed.is_ok());
+
+        match parsed {
+            Ok(source_unit) => {
+                let contracts = create_contracts(source_unit);
+                let contract = contracts.first();
+                assert!(contract.is_some());
+
+                let func_sig = get_func_sig("flip()".to_string());
+                let _ = contract.unwrap().call(func_sig.as_str()).0;
+            },
+            Err(e) => assert!(false, "Error: {:?}", e)
+        };
+    }
+
+    #[test]
+    fn test_call_flipper_contract_flip() {
+        let code = std::fs::read_to_string("./contracts/flipper.sol").expect("Unable to read source file");
+        let parsed = parse(code.as_str());
+        println!("{:#?}", parsed);
+        assert!(parsed.is_ok());
+
+        match parsed {
+            Ok(source_unit) => {
+                let contracts = create_contracts(source_unit);
+                let contract = contracts.first();
+                assert!(contract.is_some());
+
+                let flip_func_sig = get_func_sig("flip()".to_string());
+                let mutated_contract = contract.unwrap().call(flip_func_sig.as_str()).0;
+
+                let get_func_sig = get_func_sig("get()".to_string());
+                let ret = mutated_contract.call(get_func_sig.as_str()).1;
+                match ret.as_slice() {
+                    [solidity::grammar::Expression::BoolLiteral(val)] => {
+                        assert_eq!(*val, true);
+                    }
+                    _ => assert!(false, "Unexpected return value: {:?}", ret)
+                }
+                println!("Return value: {:?}", ret);
+                
+            },
+            Err(e) => assert!(false, "Error: {:?}", e)
+        }
+    }
+
 }
