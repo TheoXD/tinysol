@@ -237,8 +237,8 @@ fn handle_contract_part(part: ContractPart, contract: &mut Contract) {
                 let (visibility, mutability) = handle_attrs(attr_list.clone());
                 
                 let mut returns = vec![];
-                if let Some(FunctionReturnParams::ParameterList(_, ParameterList::Param(_, Some(ret_param), _))) = ret_params.clone() {
-                    returns = vec![ret_param];
+                if let Some(FunctionReturnParams::ParameterList(_, ParameterList::Params(_, Some(ret_param), _))) = ret_params.clone() {
+                    returns = ret_param.params;
                 }
 
                 contract.functions.insert(
@@ -347,16 +347,19 @@ fn handle_expression(expr: Expression, contract: &mut Contract) -> Vec<OP> {
 }
 
 fn find_function_signature(name: String, params: ParameterList) -> String {
-    let mut params_str = "";
+    if let ParameterList::Params((), Some(p), ()) = params {
+        let params_string = p.params.iter().map(|param| {
+            match param.ty {
+                Expression::Type(Type::Bool(_)) => Some("bool"),
+                _ => None,
+            }
+        })
+        .collect::<Option<Vec<&str>>>().map(|v| v.join(",")).unwrap_or_default();
 
-    if let ParameterList::Param((), Some(p), ()) = params {
-        params_str = match p.ty {
-            Expression::Type(Type::Bool(_)) => "bool",
-            _ => "",
-        };
+        get_func_sig(format!("{}({})", name, params_string))
+    } else {
+        get_func_sig(format!("{}()", name))
     }
-
-    get_func_sig(format!("{}({})", name, params_str))
 }
 
 pub fn get_func_sig(in_str: String) -> String {

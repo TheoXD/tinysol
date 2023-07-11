@@ -77,12 +77,21 @@ pub mod grammar {
 
     #[derive(PartialEq, Eq, Debug, Clone)]
     pub enum ParameterList {
-        Param(
+        Params(
             #[rust_sitter::leaf(text = "(")] (),
-            Option<Parameter>,
+            Option<Params>,
             #[rust_sitter::leaf(text = ")")] ()
         )
         //TODO: capture multiple parameters
+    }
+
+    #[derive(PartialEq, Eq, Debug, Clone)]
+    pub struct Params {
+        #[rust_sitter::repeat(non_empty = true)]
+        #[rust_sitter::delimited(
+            #[rust_sitter::leaf(text = ",")] ()
+        )]
+        pub params: Vec<Parameter>
     }
 
     #[derive(PartialEq, Eq, Debug, Clone)]
