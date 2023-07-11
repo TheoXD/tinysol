@@ -82,7 +82,6 @@ pub mod grammar {
             Option<Params>,
             #[rust_sitter::leaf(text = ")")] ()
         )
-        //TODO: capture multiple parameters
     }
 
     #[derive(PartialEq, Eq, Debug, Clone)]
